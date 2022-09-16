@@ -1,5 +1,6 @@
 const form = document.querySelector('.rss-form');
 const input = form.querySelector('#url-input');
+const sendsenButton = form.querySelector('button');
 const feedback = document.querySelector('.feedback');
 
 const createPost = (post, id, i18next) => {
@@ -100,15 +101,24 @@ const renderStatusValidate = (watch, i18next) => {
       feedback.classList.toggle('text-danger', true);
       feedback.textContent = i18next.t('incorrectRSS');
       break;
-    case 'added RSS': {
+    case 'loading RSS':
       input.classList.toggle('is-invalid', false);
+      input.setAttribute('readonly', 'true');
+      sendsenButton.classList.add('disabled');
+      feedback.classList.toggle('text-danger', false);
+      feedback.classList.toggle('text-success', true);
+      feedback.textContent = i18next.t('loadingRSS');
+      break;
+    case 'added RSS':
+      input.classList.toggle('is-invalid', false);
+      input.removeAttribute('readonly');
+      sendsenButton.classList.remove('disabled');
       feedback.classList.toggle('text-danger', false);
       feedback.classList.toggle('text-success', true);
       feedback.textContent = i18next.t('addedRSS');
       input.value = '';
       input.focus();
       break;
-    }
     default:
       throw new Error(`Incorrect status: '${watch.stat}'!`);
   }

@@ -9,5 +9,6 @@ export default {
     titlePost: 'Посты',
     buttonPost: 'Просмотр',
     titleFeeds: 'Фиды',
+    loadingRSS: 'Идет загрузка',
   },
 };

@@ -2,10 +2,10 @@ import onChange from 'on-change';
 import i18next from 'i18next';
 import axios from 'axios';
 import { isEqual } from 'lodash';
-import { renderStatusValidate, renderPost, renderFeeds } from './render';
-import { validate, isRSS } from './validate';
-import parse from './parse';
-import ru from './locales/ru';
+import { renderStatusValidate, renderPost, renderFeeds } from './render.js';
+import { validate, isRSS } from './validate.js';
+import parse from './parse.js';
+import ru from './locales/ru.js';
 
 const state = {
   status: '',
@@ -53,6 +53,7 @@ const addHandlers = () => {
     const formData = new FormData(e.target);
     const url = [...formData.values()][0];
     if (validate({ url }, watch)) {
+      watch.status = 'loading RSS';
       request(url)
         .then((data) => {
           if (isRSS(data)) {
@@ -89,8 +90,8 @@ const updatingPosts = () => {
         if (!isEqual(values.flat(), onChange.target(watch).post)) {
           watch.post = values.flat();
         }
-      });
-    setTimeout(run, 5000);
+      })
+      .finally(setTimeout(run, 5000));
   }, 5000);
 };
 
