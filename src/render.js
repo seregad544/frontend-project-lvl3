@@ -75,9 +75,11 @@ const renderFeeds = (watch, i18next) => {
   return wrapper;
 };
 
-const renderStatusValidate = (watch, i18next) => {
+const renderStatus = (watch, i18next) => {
   const addErrorMessege = (messege) => {
     input.classList.toggle('is-invalid', true);
+    input.removeAttribute('readonly');
+    sendsenButton.classList.remove('disabled');
     feedback.classList.toggle('text-success', false);
     feedback.classList.toggle('text-danger', true);
     feedback.textContent = i18next.t(messege);
@@ -96,17 +98,13 @@ const renderStatusValidate = (watch, i18next) => {
       addErrorMessege('networkProblem');
       break;
     case 'incorrect RSS':
-      input.classList.toggle('is-invalid', false);
-      feedback.classList.toggle('text-success', false);
-      feedback.classList.toggle('text-danger', true);
-      feedback.textContent = i18next.t('incorrectRSS');
+      addErrorMessege('incorrectRSS');
       break;
     case 'loading RSS':
       input.classList.toggle('is-invalid', false);
       input.setAttribute('readonly', 'true');
       sendsenButton.classList.add('disabled');
       feedback.classList.toggle('text-danger', false);
-      feedback.classList.toggle('text-success', true);
       feedback.textContent = i18next.t('loadingRSS');
       break;
     case 'added RSS':
@@ -125,7 +123,7 @@ const renderStatusValidate = (watch, i18next) => {
 };
 
 export {
-  renderStatusValidate,
+  renderStatus,
   renderPost,
   renderFeeds,
 };

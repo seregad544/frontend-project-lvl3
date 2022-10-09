@@ -30,6 +30,9 @@ const validate = (field, watch) => {
   return true;
 };
 
-const isRSS = (data) => data.contents.includes('<rss');
+const isRSS = (data) => {
+  console.log(data);
+  return data.contents.includes('<rss');
+};
 
 export { validate, isRSS };

@@ -1,3 +1,6 @@
+const regexp = /<(img|br|a).*?(\/|\/a)>/gm;
+const removeHtmlTags = (text) => text.replaceAll(regexp, '');
+
 export default (data) => {
   const parser = new DOMParser();
   const xml = parser.parseFromString(data.contents, 'text/xml');
@@ -5,7 +8,7 @@ export default (data) => {
   const posts = [];
   items.map((item) => posts.push({
     title: item.querySelector('title').textContent,
-    description: item.querySelector('description').textContent,
+    description: removeHtmlTags(item.querySelector('description').textContent),
     link: item.querySelector('link').textContent,
   }));
   const channel = xml.querySelector('channel');

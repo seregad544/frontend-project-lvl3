@@ -2,7 +2,7 @@ import onChange from 'on-change';
 import i18next from 'i18next';
 import axios from 'axios';
 import { isEqual } from 'lodash';
-import { renderStatusValidate, renderPost, renderFeeds } from './render.js';
+import { renderStatus, renderPost, renderFeeds } from './render.js';
 import { validate, isRSS } from './validate.js';
 import parse from './parse.js';
 import ru from './locales/ru.js';
@@ -25,7 +25,7 @@ i18nextInstance.init({
 
 const watch = onChange(state, (path) => {
   if (path === 'status') {
-    renderStatusValidate(watch, i18nextInstance);
+    renderStatus(watch, i18nextInstance);
   }
   if (path === 'post') {
     document.querySelector('.posts').innerHTML = '';
@@ -35,14 +35,15 @@ const watch = onChange(state, (path) => {
   }
 });
 
-const request = (url) => {
-  const proxy = `https://allorigins.hexlet.app/get?disableCache=true&url=${encodeURIComponent(url)}`;
-  return axios.get(proxy)
-    .then((response) => response.data)
-    .catch(() => {
-      watch.status = 'network problem';
-    });
-};
+const request = (url) => axios({
+  url: 'https://allorigins.hexlet.app/get',
+  params: {
+    disableCache: true,
+    url,
+  },
+  validateStatus: (status) => status === 200,
+  timeout: 10000,
+});
 
 const form = document.querySelector('.rss-form');
 const exampleModal = document.getElementById('modal');
@@ -55,6 +56,7 @@ const addHandlers = () => {
     if (validate({ url }, watch)) {
       watch.status = 'loading RSS';
       request(url)
+        .then((response) => response.data)
         .then((data) => {
           if (isRSS(data)) {
             watch.site.push(url);
@@ -64,6 +66,9 @@ const addHandlers = () => {
           } else {
             watch.status = 'incorrect RSS';
           }
+        })
+        .catch(() => {
+          watch.status = 'network problem';
         });
     }
   });
@@ -80,7 +85,9 @@ const addHandlers = () => {
   });
 };
 
-const getPosts = (url) => request(url).then((data) => parse(data)[1]);
+const getPosts = (url) => request(url)
+  .then((response) => response.data)
+  .then((data) => parse(data)[1]);
 
 const updatingPosts = () => {
   setTimeout(function run() {
@@ -91,7 +98,7 @@ const updatingPosts = () => {
           watch.post = values.flat();
         }
       })
-      .finally(setTimeout(run, 5000));
+      .finally(() => setTimeout(run, 5000));
   }, 5000);
 };
 
