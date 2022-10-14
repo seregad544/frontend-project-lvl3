@@ -3,6 +3,17 @@ const input = form.querySelector('#url-input');
 const sendsenButton = form.querySelector('button');
 const feedback = document.querySelector('.feedback');
 
+export const changeModal = (event, state, modal) => {
+  const button = event.relatedTarget;
+  const id = button.getAttribute('data-id');
+  const modalTitle = modal.querySelector('.modal-title');
+  const modalBodyInput = modal.querySelector('.modal-body');
+  const fullAarticle = modal.querySelector('.full-article');
+  fullAarticle.setAttribute('href', state.post[id].link);
+  modalTitle.textContent = state.post[id].title;
+  modalBodyInput.textContent = state.post[id].description;
+};
+
 const createPost = (post, id, i18next) => {
   const item = document.createElement('li');
   item.classList.add('list-group-item', 'd-flex', 'justify-content-between', 'align-items-start', 'border-0', 'border-end-0');
@@ -28,7 +39,7 @@ const createPost = (post, id, i18next) => {
   return item;
 };
 
-const renderPost = (watch, i18next) => {
+const renderPost = (state, i18next) => {
   const wrapper = document.createElement('div');
   wrapper.classList.add('card', 'border-0');
   const posts = document.createElement('div');
@@ -38,7 +49,7 @@ const renderPost = (watch, i18next) => {
   title.textContent = i18next.t('titlePost');
   const list = document.createElement('ul');
   list.classList.add('list-group', 'border-0', 'rounded-0');
-  const itemsPosts = watch.post.map((post, index) => createPost(post, index, i18next));
+  const itemsPosts = state.post.map((post, index) => createPost(post, index, i18next));
   list.append(...itemsPosts);
   posts.append(title, list);
   wrapper.append(posts);
@@ -58,7 +69,7 @@ const creatFeed = (feed) => {
   return item;
 };
 
-const renderFeeds = (watch, i18next) => {
+const renderFeeds = (state, i18next) => {
   const wrapper = document.createElement('div');
   wrapper.classList.add('card', 'border-0');
   const feeds = document.createElement('div');
@@ -68,14 +79,14 @@ const renderFeeds = (watch, i18next) => {
   title.textContent = i18next.t('titleFeeds');
   const list = document.createElement('ul');
   list.classList.add('list-group', 'border-0', 'rounded-0');
-  const itemsFeeds = watch.feeds.map(creatFeed);
+  const itemsFeeds = state.feeds.map(creatFeed);
   list.append(...itemsFeeds);
   feeds.append(title, list);
   wrapper.append(feeds);
   return wrapper;
 };
 
-const renderStatus = (watch, i18next) => {
+const renderStatus = (state, i18next) => {
   const addErrorMessege = (messege) => {
     input.classList.toggle('is-invalid', true);
     input.removeAttribute('readonly');
@@ -84,7 +95,7 @@ const renderStatus = (watch, i18next) => {
     feedback.classList.toggle('text-danger', true);
     feedback.textContent = i18next.t(messege);
   };
-  switch (watch.status) {
+  switch (state.status) {
     case 'empty field':
       addErrorMessege('emptyField');
       break;
@@ -118,12 +129,18 @@ const renderStatus = (watch, i18next) => {
       input.focus();
       break;
     default:
-      throw new Error(`Incorrect status: '${watch.stat}'!`);
+      throw new Error(`Incorrect status: '${state.stat}'!`);
   }
 };
 
-export {
-  renderStatus,
-  renderPost,
-  renderFeeds,
+export default (state, path, i18next) => {
+  if (path === 'status') {
+    renderStatus(state, i18next);
+  }
+  if (path === 'post') {
+    document.querySelector('.posts').innerHTML = '';
+    document.querySelector('.posts').append(renderPost(state, i18next));
+    document.querySelector('.feeds').innerHTML = '';
+    document.querySelector('.feeds').append(renderFeeds(state, i18next));
+  }
 };

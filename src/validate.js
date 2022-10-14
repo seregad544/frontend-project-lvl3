@@ -1,38 +1,30 @@
 import * as yup from 'yup';
-import onChange from 'on-change';
 
 const isEmptyField = (field) => yup.object({ url: yup.string().required() }).isValidSync(field);
 
 const isUrl = (field) => yup.object({ url: yup.string().url() }).isValidSync(field);
 
-const isAdd = (field, watch) => yup.object({
+const isAdd = (field, state) => yup.object({
   url: yup
     .string()
-    .notOneOf(onChange.target(watch).site),
+    .notOneOf(state.site),
 }).isValidSync(field);
 
-const validate = (field, watch) => {
+export default (field, state) => {
   const fieldStatus = isEmptyField(field);
   const urlStatus = isUrl(field);
-  const addStatus = isAdd(field, watch);
+  const addStatus = isAdd(field, state);
   if (!fieldStatus) {
-    watch.status = 'empty field';
+    state.status = 'empty field';
     return false;
   }
   if (!urlStatus) {
-    watch.status = 'incorrect URL';
+    state.status = 'incorrect URL';
     return false;
   }
   if (!addStatus) {
-    watch.status = 'relapse RSS';
+    state.status = 'relapse RSS';
     return false;
   }
   return true;
 };
-
-const isRSS = (data) => {
-  console.log(data);
-  return data.contents.includes('<rss');
-};
-
-export { validate, isRSS };

@@ -2,107 +2,105 @@ import onChange from 'on-change';
 import i18next from 'i18next';
 import axios from 'axios';
 import { isEqual } from 'lodash';
-import { renderStatus, renderPost, renderFeeds } from './render.js';
-import { validate, isRSS } from './validate.js';
+import renderPage, { changeModal } from './render.js';
+import validate from './validate.js';
 import parse from './parse.js';
 import ru from './locales/ru.js';
 
-const state = {
-  status: '',
-  site: [],
-  feeds: [],
-  post: [],
+const initializationState = () => {
+  const i18nextInstance = i18next.createInstance();
+  i18nextInstance.init({
+    lng: 'ru',
+    debug: true,
+    resources: {
+      ru,
+    },
+  });
+
+  const state = onChange(
+    {
+      status: '',
+      site: [],
+      feeds: [],
+      post: [],
+    },
+    (path) => renderPage(state, path, i18nextInstance),
+  );
+  return state;
 };
 
-const i18nextInstance = i18next.createInstance();
-i18nextInstance.init({
-  lng: 'ru',
-  debug: true,
-  resources: {
-    ru,
-  },
+const request = (url) => new Promise((resolve, reject) => {
+  axios({
+    url: 'https://allorigins.hexlet.app/get',
+    params: {
+      disableCache: true,
+      url,
+    },
+    validateStatus: (status) => status === 200,
+    timeout: 45000,
+  })
+    .then((response) => response.data)
+    .then((data) => {
+      if (data.status.http_code === 200) {
+        resolve(data);
+      } else {
+        reject(new Error(`Error code: ${data.status.http_code}`));
+      }
+    });
 });
 
-const watch = onChange(state, (path) => {
-  if (path === 'status') {
-    renderStatus(watch, i18nextInstance);
-  }
-  if (path === 'post') {
-    document.querySelector('.posts').innerHTML = '';
-    document.querySelector('.posts').append(renderPost(watch, i18nextInstance));
-    document.querySelector('.feeds').innerHTML = '';
-    document.querySelector('.feeds').append(renderFeeds(watch, i18nextInstance));
-  }
-});
-
-const request = (url) => axios({
-  url: 'https://allorigins.hexlet.app/get',
-  params: {
-    disableCache: true,
-    url,
-  },
-  validateStatus: (status) => status === 200,
-  timeout: 10000,
-});
-
-const form = document.querySelector('.rss-form');
-const exampleModal = document.getElementById('modal');
-
-const addHandlers = () => {
+const addHandlers = (state) => {
+  const form = document.querySelector('.rss-form');
+  const Modal = document.getElementById('modal');
   form.addEventListener('submit', (e) => {
     e.preventDefault();
     const formData = new FormData(e.target);
-    const url = [...formData.values()][0];
-    if (validate({ url }, watch)) {
-      watch.status = 'loading RSS';
+    const url = formData.get('url');
+    if (validate({ url }, state)) {
+      state.status = 'loading RSS';
       request(url)
-        .then((response) => response.data)
         .then((data) => {
-          if (isRSS(data)) {
-            watch.site.push(url);
-            watch.feeds = [...watch.feeds, parse(data)[0]];
-            watch.post = [...watch.post, ...parse(data)[1]];
-            watch.status = 'added RSS';
-          } else {
-            watch.status = 'incorrect RSS';
+          console.log(data.status.http_code);
+          try {
+            const [feed, post] = parse(data);
+            state.site.push(url);
+            state.feeds = [...state.feeds, feed];
+            state.post = [...state.post, ...post];
+            state.status = 'added RSS';
+          } catch (error) {
+            state.status = 'incorrect RSS';
+            console.log('incorrect RSS');
           }
         })
-        .catch(() => {
-          watch.status = 'network problem';
+        .catch((error) => {
+          console.log(error);
+          state.status = 'network problem';
         });
     }
   });
 
-  exampleModal.addEventListener('show.bs.modal', (event) => {
-    const button = event.relatedTarget;
-    const id = button.getAttribute('data-id');
-    const modalTitle = exampleModal.querySelector('.modal-title');
-    const modalBodyInput = exampleModal.querySelector('.modal-body');
-    const fullAarticle = exampleModal.querySelector('.full-article');
-    fullAarticle.setAttribute('href', watch.post[id].link);
-    modalTitle.textContent = watch.post[id].title;
-    modalBodyInput.textContent = watch.post[id].description;
-  });
+  Modal.addEventListener('show.bs.modal', (event) => changeModal(event, state, Modal));
 };
 
-const getPosts = (url) => request(url)
-  .then((response) => response.data)
-  .then((data) => parse(data)[1]);
+const getPosts = (url) => request(url).then((data) => parse(data)[1]);
 
-const updatingPosts = () => {
+const updatingPosts = (state) => {
   setTimeout(function run() {
-    const posts = onChange.target(watch).site.map(getPosts);
+    const posts = state.site.map(getPosts);
     Promise.all(posts)
-      .then((values) => {
-        if (!isEqual(values.flat(), onChange.target(watch).post)) {
-          watch.post = values.flat();
+      .then((updatedPost) => {
+        if (!isEqual(updatedPost.flat(), state.post)) {
+          state.post = updatedPost.flat();
+          console.log('refresh');
         }
+        console.log('no error');
       })
       .finally(() => setTimeout(run, 5000));
   }, 5000);
 };
 
 export default () => {
-  addHandlers();
-  updatingPosts();
+  const state = initializationState();
+  addHandlers(state);
+  updatingPosts(state);
 };

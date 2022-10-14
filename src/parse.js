@@ -1,7 +1,12 @@
 const regexp = /<(img|br|a).*?(\/|\/a)>/gm;
 const removeHtmlTags = (text) => text.replaceAll(regexp, '');
 
+const isRSS = (data) => data.contents.includes('<rss');
+
 export default (data) => {
+  if (!isRSS(data)) {
+    return new Error('Site does not contain RSS');
+  }
   const parser = new DOMParser();
   const xml = parser.parseFromString(data.contents, 'text/xml');
   const items = Array.from(xml.querySelectorAll('item'));
@@ -15,7 +20,6 @@ export default (data) => {
   const feed = {
     title: channel.querySelector('title').textContent,
     description: channel.querySelector('description').textContent,
-    link: channel.querySelector('link').textContent,
   };
   return [feed, posts];
 };
