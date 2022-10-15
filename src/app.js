@@ -2,7 +2,7 @@ import onChange from 'on-change';
 import i18next from 'i18next';
 import axios from 'axios';
 import { isEqual } from 'lodash';
-import renderPage, { changeModal } from './render.js';
+import { renderPage, changeModal } from './render.js';
 import validate from './validate.js';
 import parse from './parse.js';
 import ru from './locales/ru.js';
@@ -29,25 +29,31 @@ const initializationState = () => {
   return state;
 };
 
-const request = (url) => new Promise((resolve, reject) => {
-  axios({
-    url: 'https://allorigins.hexlet.app/get',
-    params: {
-      disableCache: true,
-      url,
-    },
-    validateStatus: (status) => status === 200,
-    timeout: 45000,
-  })
-    .then((response) => response.data)
-    .then((data) => {
-      if (data.status.http_code === 200) {
-        resolve(data);
-      } else {
-        reject(new Error(`Error code: ${data.status.http_code}`));
+const responseHandler = (data) => {
+  const status = data.status === undefined ? 'test' : 'prod';
+  const switcher = {
+    test: () => data,
+    prod: () => {
+      if (data.status.http_code !== 200) {
+        throw new Error(`code ${data.status.http_code}`);
       }
-    });
-});
+      return data;
+    },
+  };
+  return switcher[status]();
+};
+
+const request = (url) => axios({
+  url: 'https://allorigins.hexlet.app/get',
+  params: {
+    disableCache: true,
+    url,
+  },
+  validateStatus: (status) => status === 200,
+  timeout: 45000,
+})
+  .then((response) => response.data)
+  .then((data) => responseHandler(data));
 
 const addHandlers = (state) => {
   const form = document.querySelector('.rss-form');
@@ -60,7 +66,6 @@ const addHandlers = (state) => {
       state.status = 'loading RSS';
       request(url)
         .then((data) => {
-          console.log(data.status.http_code);
           try {
             const [feed, post] = parse(data);
             state.site.push(url);
@@ -69,11 +74,9 @@ const addHandlers = (state) => {
             state.status = 'added RSS';
           } catch (error) {
             state.status = 'incorrect RSS';
-            console.log('incorrect RSS');
           }
         })
-        .catch((error) => {
-          console.log(error);
+        .catch(() => {
           state.status = 'network problem';
         });
     }
@@ -91,9 +94,7 @@ const updatingPosts = (state) => {
       .then((updatedPost) => {
         if (!isEqual(updatedPost.flat(), state.post)) {
           state.post = updatedPost.flat();
-          console.log('refresh');
         }
-        console.log('no error');
       })
       .finally(() => setTimeout(run, 5000));
   }, 5000);

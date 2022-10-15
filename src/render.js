@@ -133,7 +133,7 @@ const renderStatus = (state, i18next) => {
   }
 };
 
-export default (state, path, i18next) => {
+export const renderPage = (state, path, i18next) => {
   if (path === 'status') {
     renderStatus(state, i18next);
   }
