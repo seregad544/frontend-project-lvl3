@@ -73,7 +73,7 @@ const addHandlers = (state) => {
           state.status = 'added RSS';
         })
         .catch((error) => {
-          if (error instanceof TypeError) {
+          if (error.message === 'Site does not contain RSS') {
             state.status = 'incorrect RSS';
           } else {
             state.status = 'network problem';

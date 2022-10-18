@@ -5,7 +5,7 @@ const isRSS = (data) => data.contents.includes('<rss');
 
 export default (data) => {
   if (!isRSS(data)) {
-    return new Error('Site does not contain RSS');
+    throw new Error('Site does not contain RSS');
   }
   const parser = new DOMParser();
   const xml = parser.parseFromString(data.contents, 'text/xml');
