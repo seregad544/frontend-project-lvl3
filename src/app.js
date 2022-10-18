@@ -2,21 +2,23 @@ import onChange from 'on-change';
 import i18next from 'i18next';
 import axios from 'axios';
 import { isEqual } from 'lodash';
-import { renderPage, changeModal } from './render.js';
+import renderPage from './render.js';
 import validate from './validate.js';
 import parse from './parse.js';
 import ru from './locales/ru.js';
 
-const initializationState = () => {
+const initializationDictionary = () => {
   const i18nextInstance = i18next.createInstance();
-  i18nextInstance.init({
+  return i18nextInstance.init({
     lng: 'ru',
     debug: true,
     resources: {
       ru,
     },
-  });
+  }).then(() => i18nextInstance);
+};
 
+const initializationState = (i18nextInstance) => {
   const state = onChange(
     {
       status: '',
@@ -49,7 +51,6 @@ const request = (url) => axios({
     disableCache: true,
     url,
   },
-  validateStatus: (status) => status === 200,
   timeout: 45000,
 })
   .then((response) => response.data)
@@ -57,7 +58,6 @@ const request = (url) => axios({
 
 const addHandlers = (state) => {
   const form = document.querySelector('.rss-form');
-  const Modal = document.getElementById('modal');
   form.addEventListener('submit', (e) => {
     e.preventDefault();
     const formData = new FormData(e.target);
@@ -66,23 +66,21 @@ const addHandlers = (state) => {
       state.status = 'loading RSS';
       request(url)
         .then((data) => {
-          try {
-            const [feed, post] = parse(data);
-            state.site.push(url);
-            state.feeds = [...state.feeds, feed];
-            state.post = [...state.post, ...post];
-            state.status = 'added RSS';
-          } catch (error) {
-            state.status = 'incorrect RSS';
-          }
+          const [feed, post] = parse(data);
+          state.site.push(url);
+          state.feeds = [...state.feeds, feed];
+          state.post = [...state.post, ...post];
+          state.status = 'added RSS';
         })
-        .catch(() => {
-          state.status = 'network problem';
+        .catch((error) => {
+          if (error instanceof TypeError) {
+            state.status = 'incorrect RSS';
+          } else {
+            state.status = 'network problem';
+          }
         });
     }
   });
-
-  Modal.addEventListener('show.bs.modal', (event) => changeModal(event, state, Modal));
 };
 
 const getPosts = (url) => request(url).then((data) => parse(data)[1]);
@@ -101,7 +99,10 @@ const updatingPosts = (state) => {
 };
 
 export default () => {
-  const state = initializationState();
-  addHandlers(state);
-  updatingPosts(state);
+  initializationDictionary()
+    .then((dictionary) => initializationState(dictionary))
+    .then((state) => {
+      addHandlers(state);
+      updatingPosts(state);
+    });
 };

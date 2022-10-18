@@ -2,17 +2,7 @@ const form = document.querySelector('.rss-form');
 const input = form.querySelector('#url-input');
 const sendsenButton = form.querySelector('button');
 const feedback = document.querySelector('.feedback');
-
-export const changeModal = (event, state, modal) => {
-  const button = event.relatedTarget;
-  const id = button.getAttribute('data-id');
-  const modalTitle = modal.querySelector('.modal-title');
-  const modalBodyInput = modal.querySelector('.modal-body');
-  const fullAarticle = modal.querySelector('.full-article');
-  fullAarticle.setAttribute('href', state.post[id].link);
-  modalTitle.textContent = state.post[id].title;
-  modalBodyInput.textContent = state.post[id].description;
-};
+const modal = document.getElementById('modal');
 
 const createPost = (post, id, i18next) => {
   const item = document.createElement('li');
@@ -133,7 +123,7 @@ const renderStatus = (state, i18next) => {
   }
 };
 
-export const renderPage = (state, path, i18next) => {
+export default (state, path, i18next) => {
   if (path === 'status') {
     renderStatus(state, i18next);
   }
@@ -142,5 +132,15 @@ export const renderPage = (state, path, i18next) => {
     document.querySelector('.posts').append(renderPost(state, i18next));
     document.querySelector('.feeds').innerHTML = '';
     document.querySelector('.feeds').append(renderFeeds(state, i18next));
+    modal.addEventListener('show.bs.modal', (event) => {
+      const button = event.relatedTarget;
+      const id = button.getAttribute('data-id');
+      const modalTitle = modal.querySelector('.modal-title');
+      const modalBodyInput = modal.querySelector('.modal-body');
+      const fullAarticle = modal.querySelector('.full-article');
+      fullAarticle.setAttribute('href', state.post[id].link);
+      modalTitle.textContent = state.post[id].title;
+      modalBodyInput.textContent = state.post[id].description;
+    });
   }
 };
