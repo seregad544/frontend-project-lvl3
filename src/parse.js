@@ -1,11 +1,13 @@
+import RSSError from './error.js';
+
 const regexp = /<(img|br|a).*?(\/|\/a)>/gm;
 const removeHtmlTags = (text) => text.replaceAll(regexp, '');
 
 const isRSS = (data) => data.contents.includes('<rss');
 
-export default (data) => {
+export default (data, url) => {
   if (!isRSS(data)) {
-    throw new Error('Site does not contain RSS');
+    throw new RSSError();
   }
   const parser = new DOMParser();
   const xml = parser.parseFromString(data.contents, 'text/xml');
@@ -20,6 +22,7 @@ export default (data) => {
   const feed = {
     title: channel.querySelector('title').textContent,
     description: channel.querySelector('description').textContent,
+    url,
   };
   return [feed, posts];
 };

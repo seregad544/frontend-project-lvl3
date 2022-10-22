@@ -6,6 +6,7 @@ import renderPage from './render.js';
 import validate from './validate.js';
 import parse from './parse.js';
 import ru from './locales/ru.js';
+import RSSError from './error.js';
 
 const initializationDictionary = () => {
   const i18nextInstance = i18next.createInstance();
@@ -22,7 +23,6 @@ const initializationState = (i18nextInstance) => {
   const state = onChange(
     {
       status: '',
-      site: [],
       feeds: [],
       post: [],
     },
@@ -51,14 +51,13 @@ const addHandlers = (state) => {
       state.status = 'loading RSS';
       request(url)
         .then((data) => {
-          const [feed, post] = parse(data);
-          state.site.push(url);
+          const [feed, post] = parse(data, url);
           state.feeds = [...state.feeds, feed];
           state.post = [...state.post, ...post];
           state.status = 'added RSS';
         })
         .catch((error) => {
-          if (error.message === 'Site does not contain RSS') {
+          if (error instanceof RSSError) {
             state.status = 'incorrect RSS';
           } else {
             state.status = 'network problem';
@@ -68,11 +67,11 @@ const addHandlers = (state) => {
   });
 };
 
-const getPosts = (url) => request(url).then((data) => parse(data)[1]);
+const getPosts = (url) => request(url).then((data) => parse(data, url)[1]);
 
 const updatingPosts = (state) => {
   setTimeout(function run() {
-    const posts = state.site.map(getPosts);
+    const posts = state.feeds.map((feed) => getPosts(feed.url));
     Promise.all(posts)
       .then((updatedPost) => {
         if (!isEqual(updatedPost.flat(), state.post)) {

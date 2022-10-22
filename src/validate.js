@@ -7,7 +7,7 @@ const isUrl = (field) => yup.object({ url: yup.string().url() }).isValidSync(fie
 const isAdd = (field, state) => yup.object({
   url: yup
     .string()
-    .notOneOf(state.site),
+    .notOneOf(state.feeds.map((feed) => feed.url)),
 }).isValidSync(field);
 
 export default (field, state) => {
