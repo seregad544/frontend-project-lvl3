@@ -31,20 +31,6 @@ const initializationState = (i18nextInstance) => {
   return state;
 };
 
-const responseHandler = (data) => {
-  const status = data.status === undefined ? 'test' : 'prod';
-  const switcher = {
-    test: () => data,
-    prod: () => {
-      if (data.status.http_code !== 200) {
-        throw new Error(`code ${data.status.http_code}`);
-      }
-      return data;
-    },
-  };
-  return switcher[status]();
-};
-
 const request = (url) => axios({
   url: 'https://allorigins.hexlet.app/get',
   params: {
@@ -53,8 +39,7 @@ const request = (url) => axios({
   },
   timeout: 45000,
 })
-  .then((response) => response.data)
-  .then((data) => responseHandler(data));
+  .then((response) => response.data);
 
 const addHandlers = (state) => {
   const form = document.querySelector('.rss-form');
