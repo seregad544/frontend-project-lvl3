@@ -17,6 +17,7 @@ export default (data, url) => {
     title: item.querySelector('title').textContent,
     description: removeHtmlTags(item.querySelector('description').textContent),
     link: item.querySelector('link').textContent,
+    oppend: false,
   }));
   const channel = xml.querySelector('channel');
   const feed = {

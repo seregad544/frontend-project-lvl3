@@ -1,12 +1,24 @@
 import onChange from 'on-change';
 import i18next from 'i18next';
 import axios from 'axios';
-import { isEqual } from 'lodash';
 import renderPage from './render.js';
 import validate from './validate.js';
 import parse from './parse.js';
 import ru from './locales/ru.js';
 import RSSError from './error.js';
+
+const htmlElement = {
+  form: document.querySelector('.rss-form'),
+  input: document.querySelector('#url-input'),
+  sendsenButton: document.querySelector('[aria-label="add"]'),
+  feedback: document.querySelector('.feedback'),
+  modal: document.getElementById('modal'),
+  modalTitle: document.querySelector('.modal-title'),
+  modalBodyInput: document.querySelector('.modal-body'),
+  modalFullAarticle: document.querySelector('.full-article'),
+  posts: document.querySelector('.posts'),
+  feeds: document.querySelector('.feeds'),
+};
 
 const initializationDictionary = () => {
   const i18nextInstance = i18next.createInstance();
@@ -26,7 +38,7 @@ const initializationState = (i18nextInstance) => {
       feeds: [],
       post: [],
     },
-    (path) => renderPage(state, path, i18nextInstance),
+    (path) => renderPage(state, path, i18nextInstance, htmlElement),
   );
   return state;
 };
@@ -38,12 +50,10 @@ const request = (url) => axios({
     url,
   },
   timeout: 45000,
-})
-  .then((response) => response.data);
+}).then((response) => response.data);
 
 const addHandlers = (state) => {
-  const form = document.querySelector('.rss-form');
-  form.addEventListener('submit', (e) => {
+  htmlElement.form.addEventListener('submit', (e) => {
     e.preventDefault();
     const formData = new FormData(e.target);
     const url = formData.get('url');
@@ -71,11 +81,15 @@ const getPosts = (url) => request(url).then((data) => parse(data, url)[1]);
 
 const updatingPosts = (state) => {
   setTimeout(function run() {
-    const posts = state.feeds.map((feed) => getPosts(feed.url));
-    Promise.all(posts)
+    const updatePosts = state.feeds.map((feed) => getPosts(feed.url));
+    Promise.all(updatePosts)
       .then((updatedPost) => {
-        if (!isEqual(updatedPost.flat(), state.post)) {
-          state.post = updatedPost.flat();
+        const oldPostList = state.post.map((post) => post.title);
+        const newPostList = updatedPost.flat().map((post) => post.title);
+        const difference = newPostList.filter((x) => !oldPostList.includes(x));
+        if (difference.length > 0) {
+          const change = updatedPost.flat().filter((post) => difference.includes(post.title));
+          state.post = [...change, ...onChange.target(state.post)];
         }
       })
       .finally(() => setTimeout(run, 5000));

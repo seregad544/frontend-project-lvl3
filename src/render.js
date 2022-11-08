@@ -1,14 +1,9 @@
-const form = document.querySelector('.rss-form');
-const input = form.querySelector('#url-input');
-const sendsenButton = form.querySelector('button');
-const feedback = document.querySelector('.feedback');
-const modal = document.getElementById('modal');
-
-const createPost = (post, id, i18next) => {
+const createPost = (state, post, id, i18next) => {
   const item = document.createElement('li');
   item.classList.add('list-group-item', 'd-flex', 'justify-content-between', 'align-items-start', 'border-0', 'border-end-0');
   const link = document.createElement('a');
-  link.classList.add('fw-bold');
+  const linkClassList = (state.post[id].oppend === true) ? ['fw-normal', 'link-secondary'] : ['fw-bold'];
+  link.classList.add(...linkClassList);
   link.textContent = post.title;
   const attributesLink = [['href', post.link], ['target', '_blank'], ['rel', 'noopener noreferrer'], ['data-id', id]];
   attributesLink.map((attribute) => link.setAttribute(...attribute));
@@ -18,12 +13,10 @@ const createPost = (post, id, i18next) => {
   attributesButton.map((attribute) => button.setAttribute(...attribute));
   button.textContent = i18next.t('buttonPost');
   link.onclick = () => {
-    link.classList.replace('fw-bold', 'fw-normal');
-    link.classList.add('link-secondary');
+    state.post[id].oppend = true;
   };
   button.onclick = () => {
-    link.classList.replace('fw-bold', 'fw-normal');
-    link.classList.add('link-secondary');
+    state.post[id].oppend = true;
   };
   item.append(link, button);
   return item;
@@ -39,7 +32,7 @@ const renderPost = (state, i18next) => {
   title.textContent = i18next.t('titlePost');
   const list = document.createElement('ul');
   list.classList.add('list-group', 'border-0', 'rounded-0');
-  const itemsPosts = state.post.map((post, index) => createPost(post, index, i18next));
+  const itemsPosts = state.post.map((post, index) => createPost(state, post, index, i18next));
   list.append(...itemsPosts);
   posts.append(title, list);
   wrapper.append(posts);
@@ -76,14 +69,14 @@ const renderFeeds = (state, i18next) => {
   return wrapper;
 };
 
-const renderStatus = (state, i18next) => {
+const renderStatus = (state, i18next, element) => {
   const addErrorMessege = (messege) => {
-    input.classList.toggle('is-invalid', true);
-    input.removeAttribute('readonly');
-    sendsenButton.classList.remove('disabled');
-    feedback.classList.toggle('text-success', false);
-    feedback.classList.toggle('text-danger', true);
-    feedback.textContent = i18next.t(messege);
+    element.input.classList.toggle('is-invalid', true);
+    element.input.removeAttribute('readonly');
+    element.sendsenButton.classList.remove('disabled');
+    element.feedback.classList.toggle('text-success', false);
+    element.feedback.classList.toggle('text-danger', true);
+    element.feedback.textContent = i18next.t(messege);
   };
   switch (state.status) {
     case 'empty field':
@@ -102,45 +95,42 @@ const renderStatus = (state, i18next) => {
       addErrorMessege('incorrectRSS');
       break;
     case 'loading RSS':
-      input.classList.toggle('is-invalid', false);
-      input.setAttribute('readonly', 'true');
-      sendsenButton.classList.add('disabled');
-      feedback.classList.toggle('text-danger', false);
-      feedback.textContent = i18next.t('loadingRSS');
+      element.input.classList.toggle('is-invalid', false);
+      element.input.setAttribute('readonly', 'true');
+      element.sendsenButton.classList.add('disabled');
+      element.feedback.classList.toggle('text-danger', false);
+      element.feedback.textContent = i18next.t('loadingRSS');
       break;
     case 'added RSS':
-      input.classList.toggle('is-invalid', false);
-      input.removeAttribute('readonly');
-      sendsenButton.classList.remove('disabled');
-      feedback.classList.toggle('text-danger', false);
-      feedback.classList.toggle('text-success', true);
-      feedback.textContent = i18next.t('addedRSS');
-      input.value = '';
-      input.focus();
+      element.input.classList.toggle('is-invalid', false);
+      element.input.removeAttribute('readonly');
+      element.sendsenButton.classList.remove('disabled');
+      element.feedback.classList.toggle('text-danger', false);
+      element.feedback.classList.toggle('text-success', true);
+      element.feedback.textContent = i18next.t('addedRSS');
+      element.input.value = '';
+      element.input.focus();
       break;
     default:
       throw new Error(`Incorrect status: '${state.stat}'!`);
   }
 };
 
-export default (state, path, i18next) => {
+export default (state, path, i18next, element) => {
   if (path === 'status') {
-    renderStatus(state, i18next);
+    renderStatus(state, i18next, element);
   }
-  if (path === 'post') {
-    document.querySelector('.posts').innerHTML = '';
-    document.querySelector('.posts').append(renderPost(state, i18next));
-    document.querySelector('.feeds').innerHTML = '';
-    document.querySelector('.feeds').append(renderFeeds(state, i18next));
-    modal.addEventListener('show.bs.modal', (event) => {
+  if (path.includes('post')) {
+    element.posts.innerHTML = '';
+    element.posts.append(renderPost(state, i18next));
+    element.feeds.innerHTML = '';
+    element.feeds.append(renderFeeds(state, i18next));
+    element.modal.addEventListener('show.bs.modal', (event) => {
       const button = event.relatedTarget;
       const id = button.getAttribute('data-id');
-      const modalTitle = modal.querySelector('.modal-title');
-      const modalBodyInput = modal.querySelector('.modal-body');
-      const fullAarticle = modal.querySelector('.full-article');
-      fullAarticle.setAttribute('href', state.post[id].link);
-      modalTitle.textContent = state.post[id].title;
-      modalBodyInput.textContent = state.post[id].description;
+      element.modalFullAarticle.setAttribute('href', state.post[id].link);
+      element.modalTitle.textContent = state.post[id].title;
+      element.modalBodyInput.textContent = state.post[id].description;
     });
   }
 };
