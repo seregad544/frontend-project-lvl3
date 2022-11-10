@@ -120,4 +120,9 @@ export default (state, path, i18next, element) => {
     element.feeds.innerHTML = '';
     element.feeds.append(renderFeeds(state, i18next));
   }
+  if (path.includes('modal')) {
+    element.modalFullAarticle.setAttribute('href', state.modal.link);
+    element.modalTitle.textContent = state.modal.title;
+    element.modalBody.textContent = state.modal.body;
+  }
 };
