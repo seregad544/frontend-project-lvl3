@@ -1,3 +1,4 @@
+import uniqid from 'uniqid';
 import RSSError from './error.js';
 
 const regexp = /<(img|br|a).*?(\/|\/a)>/gm;
@@ -17,7 +18,7 @@ export default (data, url) => {
     title: item.querySelector('title').textContent,
     description: removeHtmlTags(item.querySelector('description').textContent),
     link: item.querySelector('link').textContent,
-    oppend: false,
+    id: uniqid(),
   }));
   const channel = xml.querySelector('channel');
   const feed = {

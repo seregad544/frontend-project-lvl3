@@ -1,23 +1,17 @@
-const createPost = (state, post, id, i18next) => {
+const createPost = (state, post, i18next) => {
   const item = document.createElement('li');
   item.classList.add('list-group-item', 'd-flex', 'justify-content-between', 'align-items-start', 'border-0', 'border-end-0');
   const link = document.createElement('a');
-  const linkClassList = (state.post[id].oppend === true) ? ['fw-normal', 'link-secondary'] : ['fw-bold'];
+  const linkClassList = (state.visitedPostsIds.has(post.id)) ? ['fw-normal', 'link-secondary'] : ['fw-bold'];
   link.classList.add(...linkClassList);
   link.textContent = post.title;
-  const attributesLink = [['href', post.link], ['target', '_blank'], ['rel', 'noopener noreferrer'], ['data-id', id]];
+  const attributesLink = [['href', post.link], ['target', '_blank'], ['rel', 'noopener noreferrer'], ['data-id', post.id]];
   attributesLink.map((attribute) => link.setAttribute(...attribute));
   const button = document.createElement('button');
   button.classList.add('btn', 'btn-outline-primary', 'btn-sm');
-  const attributesButton = [['type', 'button'], ['data-id', id], ['data-bs-toggle', 'modal'], ['data-bs-target', '#modal']];
+  const attributesButton = [['type', 'button'], ['data-id', post.id], ['data-bs-toggle', 'modal'], ['data-bs-target', '#modal']];
   attributesButton.map((attribute) => button.setAttribute(...attribute));
   button.textContent = i18next.t('buttonPost');
-  link.onclick = () => {
-    state.post[id].oppend = true;
-  };
-  button.onclick = () => {
-    state.post[id].oppend = true;
-  };
   item.append(link, button);
   return item;
 };
@@ -32,7 +26,7 @@ const renderPost = (state, i18next) => {
   title.textContent = i18next.t('titlePost');
   const list = document.createElement('ul');
   list.classList.add('list-group', 'border-0', 'rounded-0');
-  const itemsPosts = state.post.map((post, index) => createPost(state, post, index, i18next));
+  const itemsPosts = state.post.map((post) => createPost(state, post, i18next));
   list.append(...itemsPosts);
   posts.append(title, list);
   wrapper.append(posts);
@@ -120,17 +114,10 @@ export default (state, path, i18next, element) => {
   if (path === 'status') {
     renderStatus(state, i18next, element);
   }
-  if (path.includes('post')) {
+  if (path.includes('post') || path.includes('visitedPostsIds')) {
     element.posts.innerHTML = '';
     element.posts.append(renderPost(state, i18next));
     element.feeds.innerHTML = '';
     element.feeds.append(renderFeeds(state, i18next));
-    element.modal.addEventListener('show.bs.modal', (event) => {
-      const button = event.relatedTarget;
-      const id = button.getAttribute('data-id');
-      element.modalFullAarticle.setAttribute('href', state.post[id].link);
-      element.modalTitle.textContent = state.post[id].title;
-      element.modalBodyInput.textContent = state.post[id].description;
-    });
   }
 };

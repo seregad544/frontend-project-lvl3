@@ -37,6 +37,7 @@ const initializationState = (i18nextInstance) => {
       status: '',
       feeds: [],
       post: [],
+      visitedPostsIds: new Set(),
     },
     (path) => renderPage(state, path, i18nextInstance, htmlElement),
   );
@@ -73,6 +74,18 @@ const addHandlers = (state) => {
             state.status = 'network problem';
           }
         });
+    }
+  });
+  htmlElement.modal.addEventListener('show.bs.modal', (event) => {
+    const id = event.relatedTarget.getAttribute('data-id');
+    const post = state.post.filter((item) => item.id === id)[0];
+    htmlElement.modalFullAarticle.setAttribute('href', post.link);
+    htmlElement.modalTitle.textContent = post.title;
+    htmlElement.modalBodyInput.textContent = post.description;
+  });
+  htmlElement.posts.addEventListener('click', (event) => {
+    if (event.target.closest('a') || event.target.closest('button')) {
+      state.visitedPostsIds.add(event.target.getAttribute('data-id'));
     }
   });
 };
